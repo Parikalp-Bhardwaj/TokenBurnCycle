@@ -1,0 +1,18 @@
+[toolchain]
+
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+token_project1 = "FRfRQnN3bouip1RV8Th6fmNzTomUv7ewXkUW4BWQagwr"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "http://127.0.0.1:8899"
+wallet = "/Users/parikalpbhardwaj/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
