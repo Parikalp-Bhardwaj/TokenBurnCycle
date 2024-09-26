@@ -1,0 +1,78 @@
+name: Solana Program CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-test:
+
+    runs-on: ubuntu-latest
+
+    services:
+      solana-test-validator:
+        image: solanalabs/solana:edge
+        ports:
+          - 8899:8899
+          - 8900:8900
+        options: >-
+          --health-cmd "solana-validator --version" 
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        env:
+          RUST_LOG: solana_runtime::message=trace
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # Set up Rust toolchain
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        target: bpfel-unknown-unknown
+        components: rustfmt
+
+    # Install Solana CLI tools
+    - name: Install Solana CLI
+      run: |
+        sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        solana --version
+
+    # Install Anchor CLI
+    - name: Install Anchor CLI
+      run: |
+        cargo install --git https://github.com/coral-xyz/anchor anchor-cli --locked --force
+        anchor --version
+
+    # Set up Node.js (for npm)
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16' # You can specify any version here
+
+    # Install npm dependencies (if the project uses npm/JS frontend)
+    - name: Install npm dependencies
+      run: npm install
+      working-directory: app # Change this if your frontend is in a different folder
+
+    # Build Solana program
+    - name: Build Solana program
+      run: anchor build
+
+    # Run tests
+    - name: Run tests
+      run: anchor test
+
+    # Optional: Check formatting with Rustfmt
+    - name: Run Rustfmt
+      run: cargo fmt -- --check
